@@ -10,7 +10,7 @@ small-signal, capacitance and noise parameter at that point. No quadratic
 model, no guesswork: every number is interpolated from data the simulator
 produced, and the interpolation error is *measured*, not assumed.
 
-![screenshot](docs/screenshot.png)
+![screenshot](screenshot.png)
 
 ---
 
