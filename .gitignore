@@ -1,0 +1,39 @@
+# ---- generated data: NEVER commit -------------------------------------
+# A single packed table is ~0.5-1.6 GB and a full set is well over 100 GB.
+# Tables are built from the PDK by make_sweep.py + ngspice + pack_lut.py;
+# see the README. They are reproducible, so they do not belong in git.
+lut_*/
+edge_*/
+*.raw
+*.npy
+
+# ---- simulator and tool output ----------------------------------------
+sweep_*.spice
+edge_*.spice
+probe.spice
+verify.spice
+cursor_exact.spice
+mc.spice
+cp_*.spice
+*_spice.txt
+probe_*.txt
+verify_*.txt
+cp_*.txt
+*.log
+*.out
+xplore/
+sa/
+state.json
+probe_points.json
+mc_cases.json
+
+# ---- windows / editors ------------------------------------------------
+*:Zone.Identifier
+.DS_Store
+*.swp
+
+# ---- python -----------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
