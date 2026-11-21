@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | MONTE CARLO AGAINST THE MISMATCH FORMULA, part 2 of 2
+SG13G2 gm/ID Toolbox | MONTE CARLO AGAINST THE MISMATCH FORMULA, part 2 of 2
 =============================================================================
     python3 check_mc.py
 

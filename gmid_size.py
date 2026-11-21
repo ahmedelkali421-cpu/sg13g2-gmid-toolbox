@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | SIZING ASSISTANT
+SG13G2 gm/ID Toolbox | SIZING ASSISTANT
 =============================================================================
 Turns specifications into a device.
 
-    from adtsize import Sizer
+    from gmid_size import Sizer
     s = Sizer("lut_nmos_hv_tt_27")
     r = s.solve(VDS=0.9, VSB=0.0, **{"GM/ID": 15, "FT": 10e9, "ID": 50e-6})
     print(r)
 
 or from the shell:
 
-    python3 adtsize.py lut_nmos_hv_tt_27 VDS=0.9 VSB=0 GM/ID=15 FT=10G ID=50u
+    python3 gmid_size.py lut_nmos_hv_tt_27 VDS=0.9 VSB=0 GM/ID=15 FT=10G ID=50u
 
 -----------------------------------------------------------------------------
 THE CONTRACT
@@ -85,8 +85,8 @@ import sys
 
 import numpy as np
 
-from adtlut import DERIVED, LUT
-from adtmm import Mismatch
+from gmid_lut import DERIVED, LUT
+from gmid_mm import Mismatch
 
 MM_KNOBS = Mismatch.MM_KNOBS
 
@@ -187,7 +187,7 @@ class Result(dict):
               "RO", "VA", "CGG_TOT", "CGD", "CDTOT", "FT", "ID/W"]
     # Mismatch is computed, not looked up: it comes from the Pelgrom
     # coefficients and the DRAWN area, so it is kept in its own list and
-    # never handed to eval(). Reported only -- see adtmm on why it is
+    # never handed to eval(). Reported only -- see gmid_mm on why it is
     # not allowed to size anything until Monte Carlo has measured it.
     MM = ["SIGVT", "SIGBETA", "SIGL", "SIGID", "SIGID_PAIR",
           "SIGVOS_PAIR"]
@@ -654,7 +654,7 @@ class Sizer:
         # False while the solver is still looking for a finger count, so
         # the junction law is read on its continuous branch instead of
         # stepping between even and odd. True for anything that is a
-        # real device. See adtlut.finger_regions.
+        # real device. See gmid_lut.finger_regions.
         self._parity = True
 
     # -- the two primitives ------------------------------------------------
@@ -730,7 +730,7 @@ class Sizer:
 
           * the edge correction. fT, Cgg_tot and Cdtot are built from
             capacitances that are affine in the count, so they move with
-            it. adtlut answers this from the DERIVED lambdas themselves.
+            it. gmid_lut answers this from the DERIVED lambdas themselves.
 
           * the drawn-to-effective width conversion, which is where W as
             a specification comes in. Weff = W_drawn - ng*dW, and dW is
@@ -1154,7 +1154,7 @@ class Sizer:
         #
         # Specifications that do not depend on the count skip all of this
         # and take exactly the path they took before, at exactly the old
-        # cost. Which ones those are is asked, not assumed: adtlut reads
+        # cost. Which ones those are is asked, not assumed: gmid_lut reads
         # the dependency set out of the DERIVED lambdas, so a quantity
         # added later is classified without anyone remembering to.
         # ------------------------------------------------------------------
@@ -1308,7 +1308,7 @@ def main(argv):
     if len(argv) < 2:
         print(__doc__)
         print("example:")
-        print("  python3 adtsize.py lut_nmos_hv_tt_27 VDS=0.9 VSB=0 "
+        print("  python3 gmid_size.py lut_nmos_hv_tt_27 VDS=0.9 VSB=0 "
               "GM/ID=15 FT=10G ID=50u")
         return 1
     lutdir, args = argv[1], argv[2:]

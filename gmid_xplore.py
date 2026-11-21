@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | DEVICE XPLORE
+SG13G2 gm/ID Toolbox | DEVICE XPLORE
 =============================================================================
-    python3 adtxplore.py lut_nmos_hv_tt_27 --sheet --vds 0.9
-    python3 adtxplore.py lut_nmos_hv_tt_27 --y FT --x GM/ID --vds 0.9
-    python3 adtxplore.py lut_nmos_hv_tt_27 --y 'GM/ID*FT' --x GM/ID
-    python3 adtxplore.py lut_nmos_hv_tt_27 --y FT --x L --at 'GM/ID=10,15,20'
-    python3 adtxplore.py lut_nmos_hv_tt_27 --y GM/GDS --x VDS --at GM/ID=15
+    python3 gmid_xplore.py lut_nmos_hv_tt_27 --sheet --vds 0.9
+    python3 gmid_xplore.py lut_nmos_hv_tt_27 --y FT --x GM/ID --vds 0.9
+    python3 gmid_xplore.py lut_nmos_hv_tt_27 --y 'GM/ID*FT' --x GM/ID
+    python3 gmid_xplore.py lut_nmos_hv_tt_27 --y FT --x L --at 'GM/ID=10,15,20'
+    python3 gmid_xplore.py lut_nmos_hv_tt_27 --y GM/GDS --x VDS --at GM/ID=15
 
 The sizing assistant answers a closed question: give me a device that
 meets these three numbers. This answers the open one a designer asks
 FIRST -- what can this transistor do at all, and at what price.
 
-It is an EXPRESSION ENGINE, not a fixed set of charts, because that is
-what ADT turns out to be: "arbitrary design charts ... involving complex
-expressions of your device parameters". So --y takes anything eval()
+It is an EXPRESSION ENGINE, not a fixed set of charts, because a
+designer needs arbitrary charts built from complex expressions of the
+device parameters. So --y takes anything eval()
 takes, 'GM/ID*FT' and 'SID/(4*1.38e-23*300*GM)' included, and the nine
 charts of --sheet are nine calls to the same code path. Nothing is
 computed in two places.
@@ -56,11 +56,11 @@ import sys
 
 import numpy as np
 
-from adtlut import LUT, NG_LAW, deps_of_expr
-from adtsize import Sizer, edge_dir_for, power_of
+from gmid_lut import LUT, NG_LAW, deps_of_expr
+from gmid_size import Sizer, edge_dir_for, power_of
 
-# The nine. The first four are what Omran's own students report reading
-# off his charts; the next four are the ones the JKU SG13G2 notebooks
+# The nine. The first four are the classic gm/ID design charts
+# (Jespers & Murmann); the next four are the ones the JKU SG13G2 notebooks
 # add, all computable from parameters already stored; the last is the
 # inversion-level map that tells you which gm/ID a VGS corresponds to.
 SHEET = [
@@ -356,14 +356,14 @@ def attach_cursor(fig, panels, xp, x, VDS, VSB, exact=False):
     Make every panel answer a click with the device at that point.
 
     panels maps each axes to the y expression drawn on it. The solving
-    is adtcursor's, the SAME code the command line runs -- this function
+    is gmid_cursor's, the SAME code the command line runs -- this function
     only turns a click into its two numbers and draws the answer back.
     A second implementation of the inversion living inside the chart
     tool would be one more place for the two to drift apart.
 
     Returns the handler, so it can be driven without a window.
     """
-    from adtcursor import Cursor, show, show_nearest
+    from gmid_cursor import Cursor, show, show_nearest
     cur = Cursor(xp.dir, ng=xp.ng, siz=xp.siz)
     marks = []
 
@@ -583,7 +583,7 @@ def main():
               f"backend {matplotlib.get_backend()!r}),")
         print("  so the chart was written as a picture only. The same "
               "answer, typed instead of")
-        print("  clicked:   python3 adtcursor.py " + a.lutdir
+        print("  clicked:   python3 gmid_cursor.py " + a.lutdir
               + f" --x '{a.x}=..' --y 'NAME=..' --vds {a.vds:g}")
         return
     panels = {axs[k // cols][k % cols]: done[k][0] for k in range(n)}

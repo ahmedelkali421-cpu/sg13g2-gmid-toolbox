@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | ACCURACY PROBE, part 1 of 2
+SG13G2 gm/ID Toolbox | ACCURACY PROBE, part 1 of 2
 =============================================================================
 Picks random points that fall BETWEEN grid nodes on all four axes, and
 writes an ngspice control block that evaluates the real model at exactly
@@ -32,7 +32,7 @@ import os
 import sys
 import numpy as np
 
-from adtlut import corner_of_table
+from gmid_lut import corner_of_table
 
 N_L = 20          # distinct off-grid L values
 N_PER_L = 12      # off-grid bias points at each L
@@ -180,7 +180,7 @@ def main():
     # definitions the IHP subckt needs.
     out = []
     A = out.append
-    A(f"* ADT-clone accuracy probe : {corner}")
+    A(f"* SG13G2 gm/ID Toolbox accuracy probe : {corner}")
     A("* standalone: ngspice -b probe.spice")
     A("")
     A(f'.lib {PDK_LIB} {corner}')

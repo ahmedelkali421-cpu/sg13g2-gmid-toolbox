@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | MONTE CARLO AGAINST THE MISMATCH FORMULA, part 1 of 2
+SG13G2 gm/ID Toolbox | MONTE CARLO AGAINST THE MISMATCH FORMULA, part 1 of 2
 =============================================================================
     python3 make_mc.py lut_nmos_hv_tt_27            (1000 samples)
     python3 make_mc.py lut_nmos_hv_tt_27 3000
@@ -60,8 +60,8 @@ import json
 import os
 import sys
 
-from adtlut import corner_of_table
-from adtsize import Sizer, NoSolution
+from gmid_lut import corner_of_table
+from gmid_size import Sizer, NoSolution
 
 # Not constants. main() fills them from the table's own meta.json, by
 # the same reasoning that already makes the CORNER come from the table
@@ -143,7 +143,7 @@ def main():
 
     o = []
     A = o.append
-    A(f"* ADT-clone mismatch Monte Carlo : {lib} : {N} samples")
+    A(f"* SG13G2 gm/ID Toolbox mismatch Monte Carlo : {lib} : {N} samples")
     A("* standalone : ngspice -b mc.spice")
     A("")
     A(f".lib {PDK_LIB} {lib}")

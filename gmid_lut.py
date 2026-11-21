@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | LUT ENGINE
+SG13G2 gm/ID Toolbox | LUT ENGINE
 Reads a directory produced by pack_lut.py and answers queries.
 =============================================================================
 
-    from adtlut import LUT
+    from gmid_lut import LUT
     lut = LUT("lut_nmos_hv_tt_27")
     lut.eval("GM/ID", L=0.83e-6, VGS=1.137, VDS=0.9, VSB=0.25)
 
@@ -178,7 +178,7 @@ def corner_of_table(meta, lutdir="this table"):
 # in which a perfect model disagreed with itself by 103 %, 309 % and
 # 1134 % on exactly those three.
 #
-# Nothing computed before this was affected: check_probe, adtsize and the
+# Nothing computed before this was affected: check_probe, gmid_size and the
 # verifier all go through the upper-case DERIVED keys, which carry their
 # own correct powers.
 #
@@ -1133,6 +1133,22 @@ class LUT:
     def eval(self, what, L, VGS, VDS=0.0, VSB=0.0, W=None, ng=None,
              parity=True):
         """
+        Public entry: _eval, with numpy's divide warnings silenced.
+
+        A ratio such as GM/ID at VGS = 0 or VDS = 0 is 0/0: the device
+        carries no current there and the quantity has no value. NaN is
+        the correct answer and every caller already treats it as 'no
+        point here' (a gap in a curve, a refused cursor). The warning
+        numpy prints for it reports nothing wrong, and in the window it
+        scrolled the terminal on every sweep that starts at zero volts.
+        Only the WARNING is suppressed; the NaN is returned as before.
+        """
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return self._eval(what, L, VGS, VDS, VSB, W, ng, parity)
+
+    def _eval(self, what, L, VGS, VDS=0.0, VSB=0.0, W=None, ng=None,
+              parity=True):
+        """
         `what` is a key of DERIVED, a raw parameter name, or an expression
         built from them, e.g. "GM/ID*FT".  W is the DRAWN width; omit it
         to get the reference device.
@@ -1171,7 +1187,7 @@ class LUT:
                     f"reference fingers: ng = {_f(ng):g} gives scale "
                     f"{_f(want):.6f} but W = {_f(W):.6g} gives "
                     f"{_f(scale):.6f}. "
-                    f"Size with adtsize, which realises W as a finger "
+                    f"Size with gmid_size, which realises W as a finger "
                     f"count.")
 
         class _Lazy(dict):

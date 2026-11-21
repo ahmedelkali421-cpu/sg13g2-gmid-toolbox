@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | SIZING ASSISTANT -- the window
+SG13G2 gm/ID Toolbox | SIZING ASSISTANT -- the window
 =============================================================================
-    python3 adtgui.py                run it in the directory of the tables
-    python3 adtgui.py /path/to/tables
+    python3 gmid_gui.py                run it in the directory of the tables
+    python3 gmid_gui.py /path/to/tables
 
-The layout follows the two screenshots of ADT's Sizing Assistant that
-this was built from:
+The layout:
 
     centre   Figure tabs; each figure is a 2 x 2 grid of plots (A B C D);
              under every plot: the x value of its cursor (typed, stepped
@@ -18,7 +17,7 @@ this was built from:
              table and the Y-Expr box
     bottom   the log
 
-How it is driven -- the same rule as the tool:
+How it is driven:
 
     fill four of the five fields and leave ONE empty. The empty one is
     the sweep. Press Plot beside a result (or type a Y-Expr) and it is
@@ -36,18 +35,17 @@ How it is driven -- the same rule as the tool:
     drawn curves: type any value in it (L = 220n while the curves are
     180n, 400n ...) and the cursor reads there, BETWEEN the curves. Or
     type the y you want in the readout and the Parameter is solved for.
-    This is what Omran's MOS-AK 2022 slides show the tool doing.
+    With a single curve drawn, a typed y moves the cursor along it.
 
-All the numbers come from adtsa.py, the same engine the command line
-uses; this file computes nothing of its own. What is not known about the
-real tool (the Stack and Frequency fields, two empty fields, the Plot
-button's drop-down) is not imitated: see the notes at the top of
-adtsa.py.
+All the numbers come from gmid_sa.py, the same engine the command line
+uses; this file computes nothing of its own. Not implemented yet:
+stacked devices, a frequency field, and sweeping two fields at once.
 """
 
 import datetime
 import itertools
 import json
+import math
 import os
 import sys
 
@@ -58,7 +56,7 @@ from matplotlib.backends.qt_compat import QtCore, QtGui, QtWidgets
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from adtsa import Assistant, RESULTS, UNIT, eng, find_tables, num, split_expr
+from gmid_sa import Assistant, RESULTS, UNIT, eng, find_tables, num, split_expr
 
 SIZE_KINDS = ["W", "ID"]
 INV_KINDS = ["VGS", "Vstar", "gm/ID"]
@@ -79,9 +77,8 @@ def parse_list(txt):
     '' -> [];  '2u' -> [2e-6];  '0.5u, 1u,2u' -> three values;
     '180n, 400n:200n:1u' -> 180n, 400n, 600n, 800n, 1u
 
-    The start:step:stop form is the tool's own: its L field is shown
-    holding exactly '180n, 400n:200n:1u' in Omran's MOS-AK 2022 slides,
-    with five curves drawn from it.
+    The start:step:stop form gives evenly spaced values, so a family
+    of five lengths is one short entry.
     """
     out = []
     for t in txt.replace(";", ",").split(","):
@@ -203,8 +200,7 @@ class Engine:
                     bits.append(f"{t:g}C")
                 # Which field the Parameter box under the plot stands
                 # for: the one holding a list, else L, else the
-                # inversion level when L is the sweep -- as the tool
-                # shows it. When devices are compared the Parameter box
+                # inversion level when L is the sweep. When devices are compared the Parameter box
                 # instead steps between the devices.
                 if many_dev and not par:
                     pkey, pname = "dev", "device"
@@ -357,12 +353,12 @@ class PlotCell(QtWidgets.QFrame):
             self.st["cursor"] = None
 
     # ---- the off-trace cursor -------------------------------------------
-    # In the tool's own screenshots (MOS-AK 2022, slides 17-18) the
-    # curves are drawn for L = 180n, 400n, 600n, 800n, 1u and the cursor
-    # reads GM/GDS = 51.4 at L = 220n -- a length that is NOT one of the
-    # curves, with its annotation floating in the white space between
-    # two of them. That is the "magic cursor": the Parameter under the
-    # plot is a free value, not a choice among the drawn traces.
+    # Curves drawn for L = 180n, 400n, 600n, 800n, 1u, and the cursor
+    # can still read gm/gds at L = 220n -- a length that is NOT one of
+    # the curves, with its annotation floating in the white space
+    # between two of them. That is the "magic cursor": the Parameter
+    # under the plot is a free value, not a choice among the drawn
+    # traces.
     def member(self):
         return self.members[self.st["fam"]]
 
@@ -465,6 +461,57 @@ class PlotCell(QtWidgets.QFrame):
         fin = v[np.isfinite(v)]
         span = ((fin.min() + 1) * ytarget, (fin.max() + 1) * ytarget) \
             if fin.size else None
+        return roots, span
+
+    def solve_x(self, ytarget):
+        """
+        every x at which the FIRST trace equals ytarget, ALONG the curve
+        the cursor is on (its Parameter, typed or drawn). Scanned on the
+        plotted x grid, then bisected on the engine itself.
+
+        This is what a typed y means when there is no family to choose
+        from: one curve, so the only free quantity left is x. Example:
+        ID, gm/ID, VDS, VSB fixed, x = L, y = gm/gds; typing 50 must
+        return the L that gives gm/gds = 50, not hold L and look for a
+        gm/ID that does.
+        """
+        x0 = self.st["cursor"]
+        if self.xs is None or ytarget == 0:
+            return None
+        m, t = self.member(), self.st["traces"][0]
+        pv = self.pvalue()
+        pv = 0.0 if pv is None else pv
+
+        def f(x):
+            d = self.devices_at(float(x), [pv])
+            return float(m["sa"].values(t, d)[0]) / ytarget - 1.0
+        xs = np.asarray(self.xs, float)
+        if self.st.get("pval") is None:
+            v = np.asarray(self.ys[self.st["fam"]][0], float) / ytarget - 1.0
+        else:
+            v = np.array([f(x) for x in xs])
+        logx = bool(self.st.get("logx")) and xs[0] > 0
+        roots = []
+        for i in range(len(xs) - 1):
+            if not (np.isfinite(v[i]) and np.isfinite(v[i + 1])) \
+                    or v[i] * v[i + 1] > 0:
+                continue
+            a, b, fa = xs[i], xs[i + 1], v[i]
+            for _ in range(50):
+                mid = math.sqrt(a * b) if logx else 0.5 * (a + b)
+                fm = f(mid)
+                if not np.isfinite(fm):
+                    break
+                if fa * fm <= 0:
+                    b = mid
+                else:
+                    a, fa = mid, fm
+            roots.append(math.sqrt(a * b) if logx else 0.5 * (a + b))
+        fin = v[np.isfinite(v)]
+        span = ((fin.min() + 1) * ytarget, (fin.max() + 1) * ytarget) \
+            if fin.size else None
+        if x0 is not None and roots:
+            roots.sort(key=lambda r: abs(r - x0))
         return roots, span
 
     # ---- drawing --------------------------------------------------------
@@ -600,8 +647,13 @@ class PlotCell(QtWidgets.QFrame):
                                            for l, y in zip(labs, vals)))
 
     def on_ytyped(self):
-        """a typed y: solve the Parameter that gives it at this x"""
-        if not self.members or self.st["cursor"] is None:
+        """
+        a typed y. With a FAMILY of curves (several Parameter values
+        drawn) it is the magic cursor: hold x, solve the Parameter. With
+        ONE curve there is no family to move through, so it moves the
+        cursor along the curve to the x that gives y.
+        """
+        if not self.members:
             return
         m = self.member()
         lab = split_expr(self.st["traces"][0])[0]
@@ -610,6 +662,29 @@ class PlotCell(QtWidgets.QFrame):
         except Exception:                                    # noqa: BLE001
             self.win.log(f"'{self.yout.text()}' is not a number")
             return self.redraw()
+        if len(self.members) == 1:
+            res = self.solve_x(y)
+            if res is None:
+                return self.redraw()
+            roots, span = res
+            if not roots:
+                self.win.log(
+                    f"Plot {self.name}: {lab}={eng(y)} is not reached on "
+                    f"this curve" + (f"; it spans {eng(span[0])} .. "
+                                     f"{eng(span[1])}" if span else ""))
+                return self.redraw()
+            self.st["cursor"] = float(roots[0])
+            self.redraw()
+            self.win.log(
+                f"Plot {self.name}: {lab}={eng(y)}  ->  "
+                f"{self.which}={eng(roots[0])}"
+                + (f"   ({len(roots)} solutions: "
+                   + ", ".join(eng(r) for r in roots)
+                   + "; nearest to the cursor taken)"
+                   if len(roots) > 1 else ""))
+            return
+        if self.st["cursor"] is None:
+            return
         res = self.solve_param(y)
         if res is None:
             self.win.log(f"Plot {self.name}: the Parameter here "
@@ -646,8 +721,8 @@ class PlotCell(QtWidgets.QFrame):
 
     def on_verify(self):
         """
-        ADT's cursor is 'simulator-accurate'. This is that: ngspice is
-        run once on the exact device under the cursor and the table is
+        A cursor reading should be checkable against the simulator:
+        ngspice is run once on the exact device under the cursor and the table is
         shown against it. It is the ONE place the window starts a
         simulation, so it happens only on this explicit click, and the
         netlist it runs is left on disk (cursor_exact.spice) to re-run
@@ -678,7 +753,7 @@ class PlotCell(QtWidgets.QFrame):
                      f"VSB={eng(VSB)} ...")
         QtWidgets.QApplication.processEvents()
         try:
-            from adtcursor import Cursor
+            from gmid_cursor import Cursor
             cur = Cursor(m["sa"].dir)
             spice, why = cur.spice_at(L, VGS, VDS, VSB)
         except Exception as exc:                             # noqa: BLE001
@@ -1223,7 +1298,7 @@ class Window(QtWidgets.QMainWindow):
 
 
 def selftest(root, shot):
-    """drive the window without a person: the two screenshot scenarios"""
+    """drive the window without a person: four plots, every cursor mode"""
     app = QtWidgets.QApplication(sys.argv[:1])
     w = Window(root)
     w.show()

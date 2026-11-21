@@ -98,7 +98,7 @@ the finger-count correction needs.
 ### 2. Size a transistor from the command line
 
 ```bash
-python3 adtsa.py lut_hv_tt --ID 10u --VSTAR 200m --L 2u --VDS 1.5 --VSB 0
+python3 gmid_sa.py lut_hv_tt --ID 10u --VSTAR 200m --L 2u --VDS 1.5 --VSB 0
 ```
 
 ```
@@ -115,7 +115,7 @@ python3 adtsa.py lut_hv_tt --ID 10u --VSTAR 200m --L 2u --VDS 1.5 --VSB 0
 ### 3. Open the window
 
 ```bash
-python3 adtgui.py
+python3 gmid_gui.py
 ```
 
 ## The one idea to understand
@@ -141,13 +141,13 @@ a fixed current and inversion level.
 
 | script | what it does |
 |---|---|
-| `adtgui.py` | the window: five fields, four plots, results table, cursor |
-| `adtsa.py` | the same engine from the command line |
-| `adtcursor.py` | point lookup — give a chart point, get the device |
-| `adtxplore.py` | design charts (the canonical nine-panel sheet) |
-| `adtsize.py` | size from specifications |
-| `adtcorner.py` | compare corners |
-| `adtmm.py` | mismatch / Pelgrom |
+| `gmid_gui.py` | the window: five fields, four plots, results table, cursor |
+| `gmid_sa.py` | the same engine from the command line |
+| `gmid_cursor.py` | point lookup — give a chart point, get the device |
+| `gmid_xplore.py` | design charts (the canonical nine-panel sheet) |
+| `gmid_size.py` | size from specifications |
+| `gmid_corner.py` | compare corners |
+| `gmid_mm.py` | mismatch / Pelgrom |
 | `make_sweep.py`, `make_edge.py`, `pack_lut.py` | table generation |
 | `make_verify.py`, `check_verify.py` | accuracy verification against ngspice |
 
@@ -193,8 +193,7 @@ and the classic treatment in Jespers & Murmann, *Systematic Design of
 Analog CMOS Circuits*.
 
 This project is an **independent open-source implementation** written
-from the published methodology. It is not affiliated with, derived from,
-or endorsed by Master Micro or their Analog Designer's Toolbox (ADT).
+from the published methodology.
 
 Thanks to the [IHP](https://github.com/IHP-GmbH/IHP-Open-PDK) team for
 the open PDK and to [IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | END-TO-END VERIFICATION, part 1 of 2
+SG13G2 gm/ID Toolbox | END-TO-END VERIFICATION, part 1 of 2
 =============================================================================
     python3 make_verify.py lut_nmos_hv_tt_27
     ngspice -b verify.spice
@@ -37,9 +37,9 @@ import sys
 
 import numpy as np
 
-from adtlut import corner_of_table
+from gmid_lut import corner_of_table
 
-from adtsize import Sizer, NoSolution
+from gmid_size import Sizer, NoSolution
 
 # Not constants. main() fills them from the table's own meta.json, by
 # the same reasoning that already makes the CORNER come from the table
@@ -379,7 +379,7 @@ def main():
 
     o = []
     A = o.append
-    A(f"* ADT-clone end-to-end verification : {corner}")
+    A(f"* SG13G2 gm/ID Toolbox end-to-end verification : {corner}")
     A("* standalone : ngspice -b verify.spice")
     A("")
     A(f".lib {PDK_LIB} {corner}")

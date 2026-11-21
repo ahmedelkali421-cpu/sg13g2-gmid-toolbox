@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | THE CURSOR
+SG13G2 gm/ID Toolbox | THE CURSOR
 =============================================================================
-    python3 adtcursor.py lut_nmos_hv_tt_27 --x GM/ID=14 --y GM/GDS=80
-    python3 adtcursor.py lut_nmos_hv_tt_27 --x GM/ID=14 --L 0.7
-    python3 adtcursor.py lut_nmos_hv_tt_27 --x VGS=0.7  --L 0.7
-    python3 adtcursor.py lut_hv_p_tt       --x VSTAR=0.15 --y FT=2e8 --vds 1.2
-    python3 adtcursor.py lut_nmos_hv_tt_27 --x GM/ID=14 --y GM/GDS=80 --exact
+    python3 gmid_cursor.py lut_nmos_hv_tt_27 --x GM/ID=14 --y GM/GDS=80
+    python3 gmid_cursor.py lut_nmos_hv_tt_27 --x GM/ID=14 --L 0.7
+    python3 gmid_cursor.py lut_nmos_hv_tt_27 --x VGS=0.7  --L 0.7
+    python3 gmid_cursor.py lut_hv_p_tt       --x VSTAR=0.15 --y FT=2e8 --vds 1.2
+    python3 gmid_cursor.py lut_nmos_hv_tt_27 --x GM/ID=14 --y GM/GDS=80 --exact
 
 A design chart draws a handful of curves, one per length. The point a
 designer actually wants almost never sits on one of them: it sits in the
@@ -24,8 +24,7 @@ device:
     --x NAME=VALUE --L um            the length is given, VGS is solved
     --x VGS=v      --L um            nothing to solve, a direct read
 
-TWO MODES, which is what ADT's own description of its cursor amounts to
-("off-traces simulator-accurate data from behind the scenes"):
+TWO MODES: read the stored table, or re-simulate the exact point:
 
   * default: NO NEW SIMULATION. Every number comes out of the stored
     table, through the same eval() and the same contour solver the
@@ -63,8 +62,8 @@ import sys
 
 import numpy as np
 
-from adtlut import DERIVED, ENV, corner_of_table, tokens
-from adtsize import Sizer
+from gmid_lut import DERIVED, ENV, corner_of_table, tokens
+from gmid_size import Sizer
 
 EXACT_NET = "cursor_exact.spice"
 EXACT_OUT = "cursor_exact.txt"
@@ -109,7 +108,7 @@ class Cursor:
         self.siz = siz if siz is not None else Sizer(lutdir)
         self.lut = self.siz.lut
         self.ng = int(ng) if ng else int(self.lut.ng)
-        # whole reference fingers, exactly as adtxplore draws its curves
+        # whole reference fingers, exactly as gmid_xplore draws its curves
         self.W = self.ng * (self.lut.W_nom / self.lut.ng)
 
     # ---- VGS on the x = xval contour, for many L at once --------------
@@ -253,7 +252,7 @@ class Cursor:
         cols = ["vgs", "vds", "vsb"] + list(lut.params)
         o = []
         A = o.append
-        A(f"* ADT-clone cursor, simulator-exact point : {corner}")
+        A(f"* SG13G2 gm/ID Toolbox cursor, simulator-exact point : {corner}")
         A(f"* table {self.siz.dir}")
         A(f"* standalone: ngspice -b {EXACT_NET}")
         A("")

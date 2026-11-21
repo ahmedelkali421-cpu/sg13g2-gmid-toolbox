@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | MISMATCH COEFFICIENTS, READ FROM THE PDK
+SG13G2 gm/ID Toolbox | MISMATCH COEFFICIENTS, READ FROM THE PDK
 =============================================================================
     python3 make_mismatch.py lut_nmos_hv_tt_27
     python3 make_mismatch.py lut_nmos_hv_tt_27 --models /path/to/models

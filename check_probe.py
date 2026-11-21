@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | ACCURACY PROBE, part 2 of 2
+SG13G2 gm/ID Toolbox | ACCURACY PROBE, part 2 of 2
 =============================================================================
 Compares the LUT against the real model at the off-grid points.
 
@@ -23,8 +23,8 @@ import sys
 import numpy as np
 
 sys.path.insert(0, ".")
-import adtlut                                               # noqa: E402
-from adtlut import LUT                                      # noqa: E402
+import gmid_lut                                               # noqa: E402
+from gmid_lut import LUT                                      # noqa: E402
 
 
 def pct(a, b):
@@ -104,8 +104,8 @@ def main():
     ctot_spice = S["cgg"] + S["cgsol"] + S["cgdol"]
 
     def run(cubic, slope=True):
-        adtlut.LUT.CUBIC = cubic
-        adtlut.LUT.SLOPE = slope
+        gmid_lut.LUT.CUBIC = cubic
+        gmid_lut.LUT.SLOPE = slope
         lu = LUT(spec["lutdir"])
         return {
             "ID":      (lu.eval("ID", **q),      S["ids"]),
@@ -120,22 +120,22 @@ def main():
         }
 
     # Captured BEFORE any run(), because run() MUTATES the class. These
-    # are what adtlut actually ships with; everything downstream that
+    # are what gmid_lut actually ships with; everything downstream that
     # claims to measure 'the table' has to use them.
     #
     # 'tests' used to be the literal run(True, slope=True) with the
-    # comment 'the shipping scheme'. That was true while adtlut's
+    # comment 'the shipping scheme'. That was true while gmid_lut's
     # defaults were CUBIC = True and SLOPE = True, and it went silently
     # wrong the moment SLOPE was turned off: the per-cell statistic, the
     # worst-point listing, and above all the err_meas merged into
-    # l_accuracy.json -- which adtsize.py prefers over its own bound and
+    # l_accuracy.json -- which gmid_size.py prefers over its own bound and
     # prints as THE measured accuracy -- all carried on measuring a path
     # the engine no longer takes. It reported 80 % on a table whose real
     # error is a fraction of a per cent.
     #
     # The shipping configuration lives in ONE place. This file asks it.
-    _SHIP_CUBIC = adtlut.LUT.CUBIC
-    _SHIP_SLOPE = adtlut.LUT.SLOPE
+    _SHIP_CUBIC = gmid_lut.LUT.CUBIC
+    _SHIP_SLOPE = gmid_lut.LUT.SLOPE
 
     t_lin = run(False, slope=False)
     t_est = run(True, slope=False)   # cubic, node slopes ESTIMATED
@@ -159,7 +159,7 @@ def main():
     # below evaluates the LUT today, but anything added later would
     # silently take the wrong path -- the same defect this edit exists
     # to remove. Put the class back.
-    adtlut.LUT.CUBIC, adtlut.LUT.SLOPE = _SHIP_CUBIC, _SHIP_SLOPE
+    gmid_lut.LUT.CUBIC, gmid_lut.LUT.SLOPE = _SHIP_CUBIC, _SHIP_SLOPE
     _SHIP_NAME = (("cubic" if _SHIP_CUBIC else "multilinear")
                   + ", slopes "
                   + ("supplied from gm" if _SHIP_SLOPE else "estimated"))
@@ -402,7 +402,7 @@ def main():
             acc["err_meas"], acc["n_meas"] = em, nm
             # The scheme is stamped in, because the number is only
             # valid for the path it was measured on. A later flip of
-            # adtlut.LUT.SLOPE leaves this field disagreeing with the
+            # gmid_lut.LUT.SLOPE leaves this field disagreeing with the
             # engine, and a reader can now SEE that instead of
             # inheriting it as though it still applied.
             acc["measured_by"] = ("check_probe.py, p90 of |error| vs "

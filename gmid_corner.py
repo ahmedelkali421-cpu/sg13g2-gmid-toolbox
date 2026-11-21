@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | WHAT THE BUILT DEVICE DOES AT THE OTHER CORNERS
+SG13G2 gm/ID Toolbox | WHAT THE BUILT DEVICE DOES AT THE OTHER CORNERS
 =============================================================================
-    python3 adtcorner.py lut_nmos_lv_tt_27 VDS=0.825 VSB=0 GM/ID=15 L=0.5u ID=50u
+    python3 gmid_corner.py lut_nmos_lv_tt_27 VDS=0.825 VSB=0 GM/ID=15 L=0.5u ID=50u
 
-Sizes at the NOMINAL table exactly as adtsize.py does, then freezes the
+Sizes at the NOMINAL table exactly as gmid_size.py does, then freezes the
 layout -- same L, same finger count, same drawn width -- and reads the
 slow and fast tables at that one device.
 
-WHY NOT JUST RUN adtsize THREE TIMES
+WHY NOT JUST RUN gmid_size THREE TIMES
 
 Running the sizer once per corner answers 'what width would I have
 needed if the wafer had come out slow'. It is a real number and it is
@@ -53,8 +53,8 @@ import sys
 
 import numpy as np
 
-from adtlut import LUT                                    # noqa: F401
-from adtsize import NoSolution, Sizer, fmt, parse_value
+from gmid_lut import LUT                                    # noqa: F401
+from gmid_size import NoSolution, Sizer, fmt, parse_value
 
 # The corner tag lives in the directory name, by the same convention
 # edge_dir_for uses for the companion table: lut_nmos_lv_tt_27 pairs
@@ -219,7 +219,7 @@ def main(argv):
     nom_tag, sibs = siblings(lutdir)
     VDS, VSB = fixed["VDS"], fixed["VSB"]
 
-    # ---- size at the nominal table, exactly as adtsize does -----------
+    # ---- size at the nominal table, exactly as gmid_size does -----------
     sz = Sizer(lutdir)
     try:
         r = sz.solve(VDS=VDS, VSB=VSB, **knobs)

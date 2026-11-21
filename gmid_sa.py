@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | SIZING ASSISTANT -- the five-field engine
+SG13G2 gm/ID Toolbox | SIZING ASSISTANT -- the five-field engine
 =============================================================================
-The way ADT's Sizing Assistant is driven, as seen in two screenshots of
-it (MaharaTech / ITI lab video, Lab02_VID01):
+How it is driven:
 
     a transistor's operating point is FIVE fields
 
@@ -18,43 +17,39 @@ it (MaharaTech / ITI lab video, Lab02_VID01):
     Fill all five and there is nothing to sweep: the answer is one
     device, printed as a table of results.
 
-The two cases that are actually on screen, reproduced:
+Two typical uses:
 
   A  W, L, VDS, VSB given, VGS empty   ->  curves against VGS
-       python3 adtsa.py lut_nmos_hv_tt_27 --W 40u --L 2u --VDS 1.5 --VSB 0 \\
+       python3 gmid_sa.py lut_nmos_hv_tt_27 --W 40u --L 2u --VDS 1.5 --VSB 0 \\
                --y VSTAR,VOV --y ID --y GM --y GDS --cursor 817m
 
   B  ID, Vstar, VDS, VSB given, L empty ->  ro against L
-       python3 adtsa.py lut_nmos_hv_tt_27 --ID 10u --VSTAR 200m --VDS 1.5 \\
+       python3 gmid_sa.py lut_nmos_hv_tt_27 --ID 10u --VSTAR 200m --VDS 1.5 \\
                --VSB 0 --y RO --cursor 2u
 
   and all five given                    ->  one sized device
-       python3 adtsa.py lut_nmos_hv_tt_27 --ID 10u --VSTAR 200m --L 2u \\
+       python3 gmid_sa.py lut_nmos_hv_tt_27 --ID 10u --VSTAR 200m --L 2u \\
                --VDS 1.5 --VSB 0
 
-RESULTS ARE ABSOLUTE. This is the difference from adtxplore.py: there the
+RESULTS ARE ABSOLUTE. This is the difference from gmid_xplore.py: there the
 charts are normalised to width and the current never enters; here a
 current (or a width) is one of the inputs, so ro is in ohms and gm in
 siemens FOR THAT DEVICE. Ask for ten times the current and ro is a tenth.
 
-Numbers are typed the way the tool takes them: 10u, 200m, 2u, 1.5,
+Numbers are typed SPICE style: 10u, 200m, 2u, 1.5,
 5.6MEG. Lower-case m is milli; mega is MEG, as in SPICE.
 
-WHAT IS COPIED AND WHAT IS OURS
-  Copied from the screenshots: the five fields and their alternatives,
-  the empty-field-is-the-sweep rule, the result names, the cursor
-  reading x -> y on the curve, absolute results.
-  NOT known from any source, and therefore decided here and said so:
-    * the finger count. ADT's panel shows no finger field and its
-      widths are continuous (34.5u, 19.36u in the course labs), so here
-      too the width is continuous. Underneath, a width is that many
+DESIGN DECISIONS, said so rather than hidden:
+    * the finger count. There is no finger field and the width is
+      continuous, the way a designer reads it off a chart. Underneath,
+      a width is that many
       reference fingers -- a fractional number of them -- because the
       table is exact for fingers of its own reference width and this
       project MEASURED that the current density moves when the finger
       width does. The result says how many reference fingers the width
       amounts to; the nearest whole number is the device to draw.
-    * leaving TWO fields empty, or the size field empty. Refused, rather
-      than guessing what ADT does.
+    * leaving TWO fields empty, or the size field empty. Refused: a
+      2-D sweep is not implemented yet.
     * Ron is taken as VDS/ID.
 """
 
@@ -65,7 +60,7 @@ import sys
 
 import numpy as np
 
-from adtsize import Sizer
+from gmid_size import Sizer
 
 # ---- number entry, SPICE style ------------------------------------------
 _SUF = {"f": 1e-15, "p": 1e-12, "n": 1e-9, "u": 1e-6, "m": 1e-3,
@@ -103,10 +98,9 @@ def eng(v, unit=""):
     return f"{v:.4g}{unit}"
 
 
-# The Results table. Names on the left are as ADT shows them (rows 7-28
-# of its list were readable in the screenshots; the order here follows
-# that); the right is the expression this engine evaluates. Rows whose
-# ADT definition is not confirmed are marked.
+# The Results table. Names on the left are what the window shows; the
+# right is the expression this engine evaluates. Rows whose definition
+# is a convention rather than a model quantity are marked.
 RESULTS = [
     ("ID", "ID", "A"), ("W", "W", "m"), ("VGS", "VGS", "V"),
     ("L", "L", "m"), ("VDS", "VDS", "V"), ("VSB", "VSB", "V"),
@@ -158,13 +152,12 @@ def find_tables(root="."):
     """
     {device: {(corner, temp_C): directory}} for every main table under
     root. This is what stands behind the LUT / Corner / Temp selectors:
-    ADT keeps the corners and temperatures of one device inside one .lut
-    file, this project keeps one directory per (corner, temperature), so
+    This project keeps one directory per (corner, temperature), so
     the selector is rebuilt from each table's own meta.json -- never from
     its directory name.
     """
     import json
-    from adtlut import corner_of_table
+    from gmid_lut import corner_of_table
     out = {}
     for d in sorted(os.listdir(root)):
         mp = os.path.join(root, d, "meta.json")
@@ -382,11 +375,11 @@ def main():
         + [k for k in ("L", "VDS", "VSB") if f[k] is None]
     if len(empty) > 1:
         ap.error(f"{len(empty)} fields are empty ({', '.join(empty)}). "
-                 f"Exactly one may be: it becomes the sweep. What ADT does "
-                 f"with two is not known, so it is not guessed here.")
+                 f"Exactly one may be: it becomes the sweep. Sweeping "
+                 f"two at once is not supported.")
     if empty == ["size"]:
         ap.error("the size field (W or ID) is empty. Sweeping the size is "
-                 "not supported: what ADT does there is not known.")
+                 "not supported.")
 
     sa = Assistant(a.lutdir)
     lut = sa.lut

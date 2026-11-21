@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | SWEEP GENERATOR  (Block B, as a standalone netlist)
+SG13G2 gm/ID Toolbox | SWEEP GENERATOR  (Block B, as a standalone netlist)
 =============================================================================
     python3 make_edge.py mos_tt
 
@@ -66,7 +66,7 @@ def build(corner, flav, temp=TEMP_NOM):
     raw = f"edge_{flav}_{TAG.get(corner, corner)}{temp_tag(temp)}.raw"
     o = []
     A = o.append
-    A(f"* ADT-clone EDGE sweep, ng = 1, coarse grid : {DEVICE}  {corner}")
+    A(f"* SG13G2 gm/ID Toolbox EDGE sweep, ng = 1, coarse grid : {DEVICE}  {corner}")
     A(f"* standalone : ngspice -b edge_{flav}_{corner}.spice")
     A(f"* output     : {raw}")
     A(f"* grid       : {len(L_LIST)} lengths x {len(VSB_LIST)} body biases,")

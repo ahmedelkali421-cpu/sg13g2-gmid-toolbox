@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | PACKER
+SG13G2 gm/ID Toolbox | PACKER
 Turns the multi-plot ngspice rawfile from the sweep into a 4-D LUT stored
 on an incomplete grid.
 =============================================================================

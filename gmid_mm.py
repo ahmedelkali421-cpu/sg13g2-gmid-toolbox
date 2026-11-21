@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | MISMATCH, FROM THE STORED TABLE
+SG13G2 gm/ID Toolbox | MISMATCH, FROM THE STORED TABLE
 =============================================================================
 No simulation. The coefficients come from mismatch.json, which
 make_mismatch.py extracts from the PDK and refuses to write unless the

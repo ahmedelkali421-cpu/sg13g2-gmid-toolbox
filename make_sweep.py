@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | SWEEP GENERATOR  (Block B, as a standalone netlist)
+SG13G2 gm/ID Toolbox | SWEEP GENERATOR  (Block B, as a standalone netlist)
 =============================================================================
     python3 make_sweep.py mos_ss
 
@@ -15,6 +15,7 @@ line and the output file name, and both are written as literals, because
 this ngspice build does not substitute shell variables inside write or
 shell.
 """
+import os
 import sys
 
 PARAMS = ["ids", "gm", "gmb", "gds", "vth", "vgt", "vdss", "cgg", "cgs",
@@ -23,7 +24,27 @@ PARAMS = ["ids", "gm", "gmb", "gds", "vth", "vgt", "vdss", "cgg", "cgs",
           "sig", "fknee", "cigid", "igs", "igd", "igb", "iavl", "ijd"]
 CHECK = ["vgs", "vds", "vsb", "weff", "leff"]
 
-MODELS = "/foss/pdks/ihp-sg13g2/libs.tech/ngspice/models"
+# WHERE THE PDK MODELS LIVE. The only path this project hard-codes, and
+# the only thing another machine has to tell it. Set the environment
+# variable to point at your own install:
+#
+#   export SG13G2_MODELS=/path/to/ihp-sg13g2/libs.tech/ngspice/models
+#
+# The default is the IIC-OSIC-TOOLS container layout, where the PDK is
+# mounted at /foss/pdks.
+MODELS = os.environ.get(
+    "SG13G2_MODELS",
+    "/foss/pdks/ihp-sg13g2/libs.tech/ngspice/models")
+
+if not os.path.isdir(MODELS):
+    sys.stderr.write(
+        f"\n  WARNING: the PDK model directory does not exist:\n"
+        f"    {MODELS}\n"
+        f"  Netlists will be written but ngspice will not find the "
+        f"models.\n"
+        f"  Set SG13G2_MODELS to your own path, e.g.\n"
+        f"    export SG13G2_MODELS=$PDK_ROOT/ihp-sg13g2/libs.tech/"
+        f"ngspice/models\n\n")
 
 
 def _grid(spec):
@@ -119,10 +140,10 @@ FLAVOUR = {
     # model card carries type = -1 and the model reports every quantity
     # already normalised -- applied VGS = -0.5 comes back as vgs = +0.5,
     # ids, vth, gm, gmb, gds all positive. So the rawfile that reaches
-    # pack_lut.py is the same shape as an nmos one, and adtlut, adtsize,
-    # adtcorner, make_mismatch and check_verify need no p-type branch at
+    # pack_lut.py is the same shape as an nmos one, and gmid_lut, gmid_size,
+    # gmid_corner, make_mismatch and check_verify need no p-type branch at
     # all. Had the model reported signed values, the flip map would have
-    # had to live in adtlut AND agree with check_verify AND fake_model --
+    # had to live in gmid_lut AND agree with check_verify AND fake_model --
     # one number in three places, which is the mistake this project has
     # had to correct three times.
     #
@@ -201,7 +222,7 @@ def canon_corner(c):
 # corner is ~17 dimensionless multipliers on PSP parameters and 'half way
 # to ss' means nothing. Temperature does NOT: device behaviour is smooth
 # and near-linear from -40 to 125 C, so interpolating along T alone is
-# sound and is probably what ADT does, since matching a bandgap's
+# sound and probably worth adding, since matching a bandgap's
 # temperature coefficient to under 1 ppm is not reachable from five
 # isolated points.
 #
@@ -311,7 +332,7 @@ def build(corner, flav, temp=TEMP_NOM):
     raw = f"lut_{flav}_{TAG.get(corner, corner)}{temp_tag(temp)}.raw"
     o = []
     A = o.append
-    A(f"* ADT-clone LUT sweep : {DEVICE}  {corner}")
+    A(f"* SG13G2 gm/ID Toolbox LUT sweep : {DEVICE}  {corner}")
     A(f"* standalone : ngspice -b sweep_{flav}_{corner}.spice")
     A(f"* output     : {raw}")
     A(f"* grid       : {len(L_LIST)} lengths x {len(VSB_LIST)} body biases,")

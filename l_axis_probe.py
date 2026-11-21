@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | WHAT THE L AXIS COSTS, MEASURED ON THE REAL TABLE
+SG13G2 gm/ID Toolbox | WHAT THE L AXIS COSTS, MEASURED ON THE REAL TABLE
 =============================================================================
     python3 l_axis_probe.py lut_nmos_hv_tt_27
 
@@ -42,7 +42,7 @@ import sys
 
 import numpy as np
 
-from adtlut import LUT
+from gmid_lut import LUT
 
 # All on stored nodes of the 25 mV grid, spread over the inversion range
 # and over VDS, so one unlucky bias cannot carry the conclusion.

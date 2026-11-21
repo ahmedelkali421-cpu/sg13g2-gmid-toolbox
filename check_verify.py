@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-ADT-clone | END-TO-END VERIFICATION, part 2 of 2
+SG13G2 gm/ID Toolbox | END-TO-END VERIFICATION, part 2 of 2
 =============================================================================
     python3 check_verify.py
 
@@ -111,7 +111,7 @@ def main():
     print(f"  dW from the table: {dW*1e9:+.4g} nm per finger ({_sense})")
 
     # ---- what the geometry studies measure, for the table to keep -----
-    # adtsize.py printed five of these as literals measured on
+    # gmid_size.py printed five of these as literals measured on
     # sg13_hv_nmos at its 2 um finger, and said so: 'it has NOT been
     # remeasured for this table'. Saying so was honest; measuring them is
     # better, and the studies below measure every one of the five.
@@ -311,7 +311,7 @@ def main():
         # least squares in log-log, so a single odd point cannot set it.
         try:
             sys.path.insert(0, ".")
-            from adtlut import RAW_P
+            from gmid_lut import RAW_P
         except Exception:
             RAW_P = {}
         ngs = np.array([raw[k, NF] for k, c, kd in A], float)
@@ -380,8 +380,8 @@ def main():
         # were already in the file.
         # ------------------------------------------------------------------
         try:
-            from adtlut import LUT
-            from adtsize import edge_dir_for
+            from gmid_lut import LUT
+            from gmid_size import edge_dir_for
             lut = LUT(spec["lutdir"])
             ed = edge_dir_for(spec["lutdir"])
             bare = LUT(spec["lutdir"])          # same table, no correction
@@ -540,7 +540,7 @@ def main():
     if len(C) >= 2:
         try:
             sys.path.insert(0, ".")
-            from adtlut import RAW_P
+            from gmid_lut import RAW_P
         except Exception:
             RAW_P = {}
         a, b = C[0][0], C[-1][0]
@@ -717,7 +717,7 @@ def main():
     # ---- leave the geometry laws behind, in the table -----------------
     # Only if the studies actually ran: a verify built from
     # specifications alone has nothing to record, and writing a file of
-    # four identity fields would make adtsize quote an empty measurement
+    # four identity fields would make gmid_size quote an empty measurement
     # as a measurement. Absent beats hollow.
     if "id_per_ng_spread_pct" in LAWS or "finger_width_effect_pct" in LAWS:
         LAWS["source"] = ("check_verify.py sections 4A/4B/4D, measured "
@@ -726,7 +726,7 @@ def main():
                   "w") as fh:
             json.dump(LAWS, fh, indent=1)
         print()
-        print(f"  wrote {spec['lutdir']}/finger_laws.json -- adtsize.py "
+        print(f"  wrote {spec['lutdir']}/finger_laws.json -- gmid_size.py "
               f"reads it and")
         print("  quotes THIS table's geometry numbers in place of another "
               "device's.")
