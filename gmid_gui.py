@@ -1388,6 +1388,11 @@ def main():
     if msg:
         print(msg)
         return 1
+    # On a Wayland desktop Qt prints "Wayland does not support
+    # QWindow::requestActivate()" every time a plot gets focus. It is a
+    # harmless limitation of Wayland (a window may not steal focus), so
+    # that one warning category is silenced. A rule the user set wins.
+    os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.wayland.warning=false")
     if "--selftest" in sys.argv:
         return selftest(root, args[1] if len(args) > 1 else "selftest.png")
     app = QtWidgets.QApplication(sys.argv[:1])
