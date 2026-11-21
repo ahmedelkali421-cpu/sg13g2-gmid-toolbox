@@ -1349,9 +1349,45 @@ def selftest(root, shot):
     return 0
 
 
+DEMO_URL = ("https://github.com/ahmedelkali421-cpu/sg13g2-gmid-toolbox/"
+            "releases/download/demo-tables-v1/gmid-demo-tables.tar.xz")
+
+
+def tables_or_help(root):
+    """
+    None when root holds at least one table, else the message to print.
+    The most common first-run mistake is starting the window before the
+    tables are downloaded; that deserves directions, not a traceback.
+    """
+    how = ("\n  The tables are a separate download (1.4 GB). In this folder:\n"
+           f"\n    curl -LO {DEMO_URL}"
+           "\n    mkdir tables"
+           "\n    tar -xJf gmid-demo-tables.tar.xz -C tables"
+           "\n    python3 gmid_gui.py tables\n"
+           "\n  Details: README, section 'Get the tables'.\n")
+    if not os.path.isdir(root):
+        return f"\n  No folder named '{root}' here ({os.getcwd()}).\n" + how
+    if find_tables(root):
+        return None
+    inner = [d for d in sorted(os.listdir(root))
+             if os.path.isdir(os.path.join(root, d))
+             and find_tables(os.path.join(root, d))]
+    if inner:
+        return (f"\n  No table directly in '{root}', but there are some in "
+                f"'{os.path.join(root, inner[0])}'.\n  Start with:\n\n"
+                f"    python3 gmid_gui.py {os.path.join(root, inner[0])}\n")
+    return (f"\n  '{root}' holds no table: no sub-folder with a meta.json "
+            f"in it.\n  Expected folders such as lut_hv_nmos_tt_27 and "
+            f"edge_hv_nmos_tt_27.\n" + how)
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     root = args[0] if args else "."
+    msg = tables_or_help(root)
+    if msg:
+        print(msg)
+        return 1
     if "--selftest" in sys.argv:
         return selftest(root, args[1] if len(args) > 1 else "selftest.png")
     app = QtWidgets.QApplication(sys.argv[:1])

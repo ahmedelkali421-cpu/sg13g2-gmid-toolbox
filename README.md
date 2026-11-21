@@ -231,6 +231,8 @@ instead: `brew install pyqt@5`, then create the venv with
 
 </details>
 
+**Next: the tables.** The window cannot start without them, so do not skip the next section.
+
 ---
 
 ## Get the tables
