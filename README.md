@@ -62,7 +62,7 @@ that), mismatch/Pelgrom extraction, and corner comparison.
 ## Install
 
 ```bash
-git clone https://github.com/<you>/sg13g2-gmid-toolbox
+git clone https://github.com/ahmedelkali421-cpu/sg13g2-gmid-toolbox.git
 cd sg13g2-gmid-toolbox
 pip install -r requirements.txt
 ```
