@@ -474,13 +474,18 @@ A transistor's operating point is **five fields**:
 | field | alternatives |
 |---|---|
 | size | `W` or `ID` |
-| inversion level | `VGS` or `V*` or `gm/ID` |
+| inversion level | `VGS` or `V*` or `gm/ID` — or the *other* size: `ID` in the first field and `W` here, or the reverse |
 | length | `L` |
 | drain bias | `VDS` |
 | body bias | `VSB` |
 
 **Fill four and leave one empty — the empty one becomes the sweep axis.**
 Fill all five and you get one sized device instead of a curve.
+
+Giving the current **and** the width fixes the current density, and with
+it the gate voltage: useful when a device is already sized, for instance
+to find the VGS of a cascode transistor whose ID, W, L, VDS and VSB are
+known.
 
 That single rule drives the whole tool. Leave `VGS` empty and you get
 curves against VGS; leave `L` empty and you get curves against length at

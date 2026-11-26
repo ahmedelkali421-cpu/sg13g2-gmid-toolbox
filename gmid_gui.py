@@ -59,8 +59,12 @@ from matplotlib.figure import Figure
 from gmid_sa import Assistant, RESULTS, UNIT, eng, find_tables, num, split_expr
 
 SIZE_KINDS = ["W", "ID"]
-INV_KINDS = ["VGS", "Vstar", "gm/ID"]
-INV_KEY = {"VGS": "VGS", "Vstar": "VSTAR", "gm/ID": "GMID"}
+# The second field is normally an inversion level. It may also hold the
+# OTHER size -- ID in the first field and W in the second, or the reverse
+# -- and the gate voltage then follows from the current density.
+INV_KINDS = ["VGS", "Vstar", "gm/ID", "W", "ID"]
+INV_KEY = {"VGS": "VGS", "Vstar": "VSTAR", "gm/ID": "GMID",
+           "W": "W", "ID": "ID"}
 SLOTS = "ABCD"
 STYLES = ["-", ":", "--", "-."]
 
@@ -143,6 +147,11 @@ class Engine:
         if "size" in empty:
             raise ValueError(f"{st['size_kind']} is empty. The size field "
                              f"cannot be the sweep; give W or ID.")
+        if st["inv_kind"] == st["size_kind"]:
+            raise ValueError(
+                f"{st['size_kind']} is chosen in both of the first two "
+                f"fields. To give the current and the width together, put "
+                f"ID in one and W in the other.")
         if len(multi) > 1:
             raise ValueError("more than one field holds a list. Only one "
                              "can be the Parameter of a family.")
@@ -422,6 +431,11 @@ class PlotCell(QtWidgets.QFrame):
             return np.linspace(0.0, sa.vmax, 199)[1:]
         if k == "inv":
             kind = m["inv"][0]
+            if kind == "W":
+                return sa.wf * np.exp(np.linspace(np.log(0.25),
+                                                  np.log(1000.0), 241))
+            if kind == "ID":
+                return np.exp(np.linspace(np.log(1e-9), np.log(1e-2), 281))
             return (np.linspace(0.06, 0.8, 223) if kind == "VSTAR" else
                     np.linspace(2.0, 30.0, 225) if kind == "GMID" else
                     np.linspace(0.0, sa.vmax, 265)[1:])

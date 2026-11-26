@@ -216,13 +216,42 @@ class Assistant:
         out = np.where(okp & (out + VSB <= self.vmax + 1e-9), out, np.nan)
         return out
 
+    # -- field 2 given as the OTHER size: ID and W together -------------
+    def _vgs_density(self, iref, L, VDS, VSB):
+        """
+        VGS at which the REFERENCE device carries iref. Giving both ID and
+        W fixes the current density ID/W, and at a fixed L, VDS and VSB a
+        density is exactly one gate voltage, because ID rises strictly
+        with VGS. So this is the same contour solve as gm/ID, on ID.
+        """
+        iref = np.broadcast_to(np.asarray(iref, float), L.shape)
+        okp = np.isfinite(iref) & (iref > 0)
+        tgt = np.where(okp, iref, 1.0)
+
+        def con(Lq, Vq):
+            sh = np.shape(Lq)
+            return self.lut.eval(
+                "ID", L=Lq, VGS=Vq, VDS=np.broadcast_to(VDS, sh),
+                VSB=np.broadcast_to(VSB, sh)) / np.broadcast_to(tgt, sh)
+
+        out = self.siz._vgs_curve(con, L, None, float(np.min(VSB)))
+        return np.where(okp & (out + VSB <= self.vmax + 1e-9), out, np.nan)
+
     def solve(self, size, inv, L, VDS, VSB):
         """
         The devices at these points, as arrays: L, VGS, VDS, VSB, W, ng.
         ng is FRACTIONAL -- the width counted in reference fingers.
         Rows that are not a device (unreachable, outside the table) hold
         NaN in VGS and W.
+
+        The second field is normally an inversion level (VGS, VSTAR,
+        GMID). It may also be the OTHER size: size = ('ID', i) with
+        inv = ('W', w), or the reverse. Current and width together fix
+        the device as fully as an inversion level does, and the gate
+        voltage then follows from the current density.
         """
+        if inv[0] in ("W", "ID"):
+            return self._solve_density(size, inv, L, VDS, VSB)
         L, VDS, VSB = (np.atleast_1d(np.asarray(v, float))
                        for v in (L, VDS, VSB))
         n = max(L.size, VDS.size, VSB.size,
@@ -254,6 +283,37 @@ class Assistant:
         bad = ~(np.isfinite(ng) & (ng > 0))
         vg[bad] = np.nan
         ng[bad] = np.nan
+        return dict(L=L, VGS=vg, VDS=VDS, VSB=VSB, W=ng * self.wf, ng=ng)
+
+    def _solve_density(self, size, inv, L, VDS, VSB):
+        if inv[0] == size[0] or size[0] not in ("W", "ID"):
+            raise ValueError(f"{size[0]} and {inv[0]} are the same field: "
+                             f"give the current in one and the width in "
+                             f"the other")
+        wv = size[1] if size[0] == "W" else inv[1]
+        iv = size[1] if size[0] == "ID" else inv[1]
+        L, VDS, VSB = (np.atleast_1d(np.asarray(v, float))
+                       for v in (L, VDS, VSB))
+        n = max(L.size, VDS.size, VSB.size, np.size(wv), np.size(iv))
+        L, VDS, VSB, W, I = (np.broadcast_to(np.asarray(v, float),
+                                             (n,)).astype(float)
+                             for v in (L, VDS, VSB, wv, iv))
+        g = self.lut.L
+        inside = ((L >= g[0] * (1 - 1e-9)) & (L <= g[-1] * (1 + 1e-9))
+                  & (VDS >= 0) & (VSB >= 0)
+                  & (VDS + VSB <= self.vmax + 1e-9)
+                  & np.isfinite(W) & (W > 0))
+        # ID scales exactly with the count of reference fingers, so the
+        # reference device must carry I x (its width / the asked width)
+        iref = np.where(inside, I * (self.wf * self.lut.ng)
+                        / np.where(inside, W, 1.0), np.nan)
+        vg = np.full(n, np.nan)
+        if inside.any():
+            vg[inside] = self._vgs_density(iref[inside], L[inside],
+                                           VDS[inside], VSB[inside])
+        ok = np.isfinite(vg)
+        ng = np.where(ok, W / self.wf, np.nan)
+        vg[~ok] = np.nan
         return dict(L=L, VGS=vg, VDS=VDS, VSB=VSB, W=ng * self.wf, ng=ng)
 
     def values(self, expr, d):
@@ -301,6 +361,13 @@ class Assistant:
             return np.linspace(0.07, 0.6, 54)
         if which == "GMID":
             return np.linspace(3.0, 28.0, 51)
+        if which == "W":
+            # the width at a fixed current: a quarter of a reference
+            # finger up to a thousand of them, log spaced
+            return self.wf * np.exp(np.linspace(np.log(0.25),
+                                                np.log(1000.0), 121))
+        if which == "ID":
+            return np.exp(np.linspace(np.log(1e-9), np.log(1e-2), 141))
         raise ValueError(which)
 
     def at(self, which, xs, size, inv, f):
@@ -359,17 +426,23 @@ def main():
     a = ap.parse_args()
 
     # ---- the five fields ------------------------------------------------
-    if a.W is not None and a.ID is not None:
-        ap.error("W and ID are the SAME field (the size); give one")
     ninv = sum(v is not None for v in (a.VGS, a.VSTAR, a.GMID))
     if ninv > 1:
         ap.error("VGS, VSTAR and GMID are the SAME field (the inversion "
                  "level); give one")
-    size = (("W", a.W) if a.W is not None else
-            ("ID", a.ID) if a.ID is not None else None)
-    inv = (("VGS", a.VGS) if a.VGS is not None else
-           ("VSTAR", a.VSTAR) if a.VSTAR is not None else
-           ("GMID", a.GMID) if a.GMID is not None else None)
+    both = a.W is not None and a.ID is not None
+    if both and ninv:
+        ap.error("ID and W together already fix the inversion level; "
+                 "drop VGS / VSTAR / GMID, or drop one of ID and W")
+    if both:
+        # current in the size field, width in the second field
+        size, inv = ("ID", a.ID), ("W", a.W)
+    else:
+        size = (("W", a.W) if a.W is not None else
+                ("ID", a.ID) if a.ID is not None else None)
+        inv = (("VGS", a.VGS) if a.VGS is not None else
+               ("VSTAR", a.VSTAR) if a.VSTAR is not None else
+               ("GMID", a.GMID) if a.GMID is not None else None)
     f = dict(L=a.L, VDS=a.VDS, VSB=a.VSB)
     empty = ([] if size else ["size"]) + ([] if inv else ["inversion"]) \
         + [k for k in ("L", "VDS", "VSB") if f[k] is None]
